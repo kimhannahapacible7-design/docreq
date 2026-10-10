@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batangas State University — Document Request Portal</title>
+    <style>
+        :root {
+            --primary: #003366;
+            --secondary: #D6964A;
+            --accent: #2E8B57;
+            --danger: #DC3545;
+            --light: #F8F9FA;
+            --dark: #1D2021;
+            --gray: #6C757D;
+            --shadow: 0 4px 20px rgba(0,0,0,0.1);
+            --radius: 8px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
+        body { background: #EEF2F7; min-height: 100vh; }
+
+        /* LOGIN */
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #003366 0%, #004B87 100%);
+            padding: 20px;
+        }
+        .login-card {
+            background: white; border-radius: 16px; box-shadow: var(--shadow);
+            width: 100%; max-width: 420px; overflow: hidden;
+        }
+        .login-header {
+            background: var(--primary); color: white; padding: 25px; text-align: center;
+        }
+        .login-header h1 { font-size: 1.2rem; margin-bottom: 4px; }
+        .login-header p { opacity: 0.85; font-size: 0.9rem; }
+        .login-body { padding: 30px; }
+        .form-group { margin-bottom: 18px; }
+        label { display: block; font-weight: 600; margin-bottom: 6px; color: var(--dark); font-size: 0.9rem; }
+        input, select, textarea {
+            width: 100%; padding: 11px 14px; border: 1px solid #CED4DA;
+            border-radius: var(--radius); font-size: 0.95rem;
+        }
+        input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,51,102,0.1); }
+        button {
+            width: 100%; padding: 12px; border: none; border-radius: var(--radius);
+            font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.25s;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: #00264D; }
+        .btn-secondary { background: var(--gray); color: white; }
+        .btn-sm { padding: 6px 12px; width: auto; font-size: 0.85rem; }
+        .error-msg { color: var(--danger); margin-top: 10px; font-size: 0.9rem; display: none; }
+
+        /* MAIN LAYOUT */
+        .app-container { display: none; min-height: 100vh; }
+        .top-nav {
+            background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 12px 30px; display: flex; justify-content: space-between; align-items: center;
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+        }
+        .brand { display: flex; align-items: center; gap: 10px; }
+        .brand h2 { font-size: 1rem; color: var(--primary); }
+        .nav-right { display: flex; align-items: center; gap: 20px; }
+        .user-info { display: flex; align-items: center; gap: 10px; }
+        .user-badge {
+            background: var(--primary); color: white; width: 36px; height: 36px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;
+        }
+        .notif-icon { position: relative; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+        .notif-badge {
+            position: absolute; top: -8px; right: -8px; background: var(--danger); color: white;
+            font-size: 0.7rem; min-width: 18px; height: 18px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-weight: bold;
+        }
+        .notif-dropdown {
+            position: absolute; right: 0; top: 45px; width: 360px; background: white;
+            border-radius: var(--radius); box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            max-height: 450px; overflow-y: auto; display: none; z-index: 500;
+        }
+        .notif-dropdown.show { display: block; }
+        .notif-header { 
+            padding: 14px 18px; border-bottom: 1px solid #eee; 
+            font-weight: bold; display: flex; justify-content: space-between;
+            align-items: center; position: sticky; top: 0; background: white;
+        }
+        .notif-item { 
+            padding: 14px 18px; border-bottom: 1px solid #f5f5f5; cursor: pointer; 
+            transition: background 0.25s;
+        }
+        .notif-item:hover { background: #f0f4f8; }
+        .notif-item.unread { background: #E8F0FE; border-left: 4px solid var(--primary); font-weight: 500; }
+        .notif-time { font-size: 0.75rem; color: var(--gray); margin-top: 6px; }
+        .notif-text { font-size: 0.9rem; line-height: 1.4; }
+
+        .sidebar {
+            position: fixed; left: 0; top: 60px; bottom: 0; width: 240px; background: white;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.05); padding: 20px 0;
+        }
+        .sidebar-menu { list-style: none; }
+        .sidebar-menu li a {
+            display: block; padding: 12px 25px; color: #444; text-decoration: none;
+            border-left: 3px solid transparent;
+        }
+        .sidebar-menu li a:hover, .sidebar-menu li a.active {
+            background: #EEF2F7; color: var(--primary); border-left-color: var(--primary);
+        }
+        .main-content { margin-left: 240px; margin-top: 60px; padding: 25px; }
+
+        .page { display: none; }
+        .page.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 18px; margin-bottom: 25px; }
+        .stat-card { background: white; border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
+        .stat-card h3 { font-size: 0.9rem; color: var(--gray); margin-bottom: 8px; }
+        .stat-card .num { font-size: 1.8rem; font-weight: bold; color: var(--primary); }
+        .stat-card.pending .num { color: #D6964A; }
+        .stat-card.processing .num { color: #0066CC; }
+        .stat-card.completed .num { color: #2E8B57; }
+
+        .card { background: white; border-radius: var(--radius); padding: 25px; box-shadow: var(--shadow); margin-bottom: 20px; }
+        .card h2 { font-size: 1.1rem; margin-bottom: 20px; color: var(--primary); padding-bottom: 10px; border-bottom: 1px solid #eee; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+        th { background: #F8F9FA; font-weight: 700; color: var(--primary); }
+        .status-tag {
+            display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 600;
+        }
+        .status-pending { background: #FFF3CD; color: #856404; }
+        .status-processing { background: #CCE5FF; color: #004085; }
+        .status-ready { background: #D4EDDA; color: #155724; }
+        .status-completed { background: #E2E3E5; color: #383D41; }
+
+        .payment-note {
+            background: #FFF8E1; border-left: 4px solid #FFC107; padding: 12px 15px; margin: 15px 0; border-radius: 0 var(--radius) var(--radius) 0;
+            font-size: 0.9rem;
+        }
+        .ref-no { font-family: monospace; font-weight: bold; color: var(--primary); font-size: 1rem; }
+        .search-bar { margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; }
+        .search-bar input { flex: 1; min-width: 250px; max-width: 400px; }
+        .hidden { display: none !important; }
+        .profile-row { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 15px; }
+        .profile-col { flex: 1; min-width: 200px; }
+        .profile-col p { padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; }
+        .profile-col strong { color: var(--primary); display: inline-block; width: 120px; }
+        .row { display: flex; flex-wrap: wrap; gap: 15px; }
+        .col { flex: 1; min-width: 200px; }
+    </style>
+</head>
+<body>
+
+<!-- LOGIN PAGE -->
+<div class="login-container" id="loginPage">
+    <div class="login-card">
+        <div class="login-header">
+            <h1>🏛️ Batangas State University</h1>
+            <p>Document Request Portal</p>
+        </div>
+        <div class="login-body">
+            <div class="form-group">
+                <label>Email / Student ID</label>
+                <input type="text" id="loginId" placeholder="Enter your ID">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="loginPass" placeholder="Enter your password" onkeydown="if(event.key==='Enter')login()">
+            </div>
+            <button class="btn-primary" onclick="login()">Sign In</button>
+            <div class="error-msg" id="loginError">❌ Invalid ID or password. Please try again.</div>
+        </div>
+    </div>
+</div>
+
+<!-- MAIN APP -->
+<div class="app-container" id="appPage">
+    <nav class="top-nav">
+        <div class="brand"><h2>🏛️ Batangas State University</h2></div>
+        <div class="nav-right">
+            <div class="notif-icon" id="notifToggle" onclick="toggleNotif()">
+                🔔
+                <span class="notif-badge" id="notifCount">0</span>
+                <div class="notif-dropdown" id="notifDropdown">
+                    <div class="notif-header">
+                        <span>Notifications</span>
+                        <a href="#" onclick="markAllRead();return false;" style="font-size:0.8rem;color:var(--primary);">Mark all read</a>
+                    </div>
+                    <div id="notifList"></div>
+                </div>
+            </div>
+            <div class="user-info">
+                <div class="user-badge" id="userBadge">S</div>
+                <div>
+                    <div style="font-weight:600;font-size:0.9rem;" id="dispName">Student</div>
+                    <div style="font-size:0.75rem;color:var(--gray);" id="dispRole">STUDENT</div>
+                </div>
+                <button class="btn-sm btn-secondary" style="margin-left:10px;" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <aside class="sidebar">
+        <ul class="sidebar-menu" id="studentMenu">
+            <li><a href="#dashboard" class="active" data-page="dashboard">📊 Dashboard</a></li>
+            <li><a href="#request" data-page="request">📝 New Request</a></li>
+            <li><a href="#track" data-page="track">🔍 Track Request</a></li>
+            <li><a href="#history" data-page="history">📋 History</a></li>
+            <li><a href="#profile" data-page="profile">👤 My Profile</a></li>
+        </ul>
+        <ul class="sidebar-menu hidden" id="adminMenu">
+            <li><a href="#admindash" class="active" data-page="admindash">📊 Dashboard</a></li>
+            <li><a href="#manage" data-page="manage">📥 Manage Requests</a></li>
+            <li><a href="#allhistory" data-page="allhistory">📋 All Transactions</a></li>
+            <li><a href="#search" data-page="search">🔍 Search Record</a></li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        <!-- STUDENT DASHBOARD -->
+        <div class="page active" id="page-dashboard">
+            <h2>Welcome, <span id="dashName"></span>! 👋</h2>
+            <p style="color:var(--gray);margin:10px 0 25px;">Current Date & Time: <span id="currentTime"></span></p>
+            <div class="stats-grid">
+                <div class="stat-card pending"><h3>Pending</h3><div class="num" id="statPending">0</div></div>
+                <div class="stat-card processing"><h3>Processing</h3><div class="num" id="statProcessing">0</div></div>
+                <div class="stat-card completed"><h3>Completed</h3><div class="num" id="statCompleted">0</div></div>
+                <div class="stat-card"><h3>Total Requests</h3><div class="num" id="statTotal">0</div></div>
+            </div>
+            <div class="card">
+                <h2>Recent Requests</h2>
+                <table><thead><tr><th>Reference No.</th><th>Document</th><th>Status</th><th>Date</th></tr></thead>
+                <tbody id="recentBody"></tbody></table>
+            </div>
+        </div>
+
+        <!-- NEW REQUEST -->
+        <div class="page" id="page-request">
+            <h2>📝 Request Document</h2>
+            <div class="payment-note">⚠️ <strong>Payment Notice:</strong> Pay at the Administration Office. Present your Reference Number.</div>
+            <div class="card">
+                <h3>Personal Information</h3>
+                <div class="profile-row">
+                    <div class="profile-col">
+                        <p><strong>Student ID:</strong> <span id="reqStudentId"></span></p>
+                        <p><strong>Full Name:</strong> <span id="reqFullName"></span></p>
+                    </div>
+                    <div class="profile-col">
+                        <p><strong>Course/Year:</strong> <span id="reqCourseVal"></span></p>
+                        <p><strong>Email:</strong> <span id="reqEmailVal"></span></p>
+                    </div>
+                </div>
+                <form id="requestForm">
+                    <h3>Document Details</h3>
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group">
+                                <label>Document Type *</label>
+                                <select id="docType" required>
+                                    <option value="">-- Select Document --</option>
+                                    <option value="Transcript of Records">Transcript of Records</option>
+                                    <option value="Certificate of Enrollment">Certificate of Enrollment</option>
+                                    <option value="Certificate of Good Moral">Certificate of Good Moral</option>
+                                    <option value="Diploma (Certified True Copy)">Diploma</option>
+                                    <option value="Honorable Dismissal">Honorable Dismissal</option>
+                                    <option value="Certificate of Graduation">Certificate of Graduation</option>
+                                    <option value="Others">Others</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group">
+                                <label>Number of Copies *</label>
+                                <input type="number" id="copies" min="1" value="1" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Purpose *</label>
+                        <textarea id="purpose" rows="3" required></textarea>
+                    </div>
+                    <h3>Mode of Release *</h3>
+                    <div class="form-group">
+                        <select id="releaseMode" onchange="toggleDeliveryFields()">
+                            <option value="Pick-up">Personal Pick-up</option>
+                            <option value="Delivery">Delivery</option>
+                        </select>
+                    </div>
+                    <div id="deliveryFields" class="hidden">
+                        <div class="card" style="background:#F8F9FA;">
+                            <h4>Delivery Details</h4>
+                            <div class="row">
+                                <div class="col"><div class="form-group"><label>Contact No *</label><input type="tel" id="delContact"></div></div>
+                                <div class="col"><div class="form-group"><label>Email *</label><input type="email" id="delEmail"></div></div>
+                            </div>
+                            <div class="form-group"><label>Address *</label><textarea id="delAddress" rows="3"></textarea></div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Target Release Date</label>
+                        <input type="date" id="targetDate" required>
+                    </div>
+                    <button type="submit" class="btn-primary">Submit Request</button>
+                </form>
+                <div id="successBlock" class="hidden" style="margin-top:20px;padding:20px;background:#D4EDDA;border-radius:var(--radius);">
+                    <h3 style="color:#155724;">✅ Submitted!</h3>
+                    <p>Reference Number:</p>
+                    <p class="ref-no" style="font-size:1.5rem;" id="newRefNo"></p>
+                    <p style="font-size:0.9rem;">Save this number — present to cashier.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TRACK -->
+        <div class="page" id="page-track">
+            <h2>🔍 Track Your Request</h2>
+            <div class="search-bar">
+                <input type="text" id="trackRef" placeholder="Enter Reference Number...">
+                <button class="btn-primary" style="width:auto;" onclick="searchRequest()">Search</button>
+            </div>
+            <div id="trackResult" class="hidden">
+                <div class="card">
+                    <p><strong>Reference:</strong> <span class="ref-no" id="tRef"></span></p>
+                    <p><strong>Document:</strong> <span id="tDoc"></span></p>
+                    <p><strong>Status:</strong> <span class="status-tag" id="tStatus"></span></p>
+                    <p><strong>Payment:</strong> <span id="tPayment"></span></p>
+                    <p><strong>Last Updated:</strong> <span id="tUpdated"></span></p>
+                </div>
+            </div>
+            <p id="trackEmpty" style="color:var(--gray);">Enter reference number to track.</p>
+        </div>
+
+        <!-- HISTORY -->
+        <div class="page" id="page-history">
+            <h2>📋 Request History</h2>
+            <div class="card">
+                <table><thead><tr><th>Ref No.</th><th>Document</th><th>Status</th><th>Payment</th><th>Date</th></tr></thead>
+                <tbody id="historyBody"></tbody></table>
+                <p id="noHistory" class="hidden" style="color:var(--gray);font-style:italic;">No requests yet.</p>
+            </div>
+        </div>
+
+        <!-- PROFILE -->
+        <div class="page" id="page-profile">
+            <h2>👤 My Profile</h2>
+            <div class="card">
+                <p><strong>Student ID:</strong> <span id="pId"></span></p>
+                <p><strong>Name:</strong> <span id="pName"></span></p>
+                <p><strong>Email:</strong> <span id="pEmail"></span></p>
+                <p><strong>Course:</strong> <span id="pCourse"></span></p>
+                <p><strong>Contact:</strong> <span id="pContact"></span></p>
+            </div>
+        </div>
+
+        <!-- ADMIN DASHBOARD -->
+        <div class="page" id="page-admindash">
+            <h2>📊 Admin Dashboard</h2>
+            <p style="color:var(--gray);margin:10px 0 25px;">System Time: <span id="adminTime"></span></p>
+            <div class="stats-grid">
+                <div class="stat-card pending"><h3>Pending</h3><div class="num" id="aPending">0</div></div>
+                <div class="stat-card processing"><h3>Processing</h3><div class="num" id="aProcessing">0</div></div>
+                <div class="stat-card completed"><h3>Completed</h3><div class="num" id="aCompleted">0</div></div>
+                <div class="stat-card"><h3>Total</h3><div class="num" id="aTotal">0</div></div>
+            </div>
+            <div class="card">
+                <h3>New Submissions</h3>
+                <table><thead><tr><th>Ref No.</th><th>Student</th><th>Document</th><th>Status</th><th>Action</th></tr></thead>
+                <tbody id="newReqBody"></tbody></table>
+            </div>
+        </div>
+
+        <!-- ADMIN MANAGE -->
+        <div class="page" id="page-manage">
+            <h2>📥 Manage Requests</h2>
+            <div class="search-bar">
+                <input type="text" id="mSearch" placeholder="Search Ref or Name..." oninput="renderManageRequests()">
+                <select id="mFilter" onchange="renderManageRequests()" style="width:auto;">
+                    <option value="all">All Status</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Processing">Processing</option>
+                    <option value="Ready for Pick-up/Delivery">Ready</option>
+                    <option value="Completed">Completed</option>
+                </select>
+            </div>
+            <div class="card">
+                <table><thead><tr><th>Ref No.</th><th>Student</th><th>Document</th><th>Status</th><th>Payment</th><th>Processed By</th><th>Update</th></tr></thead>
+                <tbody id="manageBody"></tbody></table>
+            </div>
+        </div>
+
+        <!-- ALL TRANSACTIONS -->
+        <div class="page" id="page-allhistory">
+            <h2>📋 All Transactions</h2>
+            <div class="card">
+                <table><thead><tr><th>Ref No.</th><th>Student</th><th>Document</th><th>Status</th><th>Payment</th><th>Processed By</th><th>Date</th></tr></thead>
+                <tbody id="allHistBody"></tbody></table>
+            </div>
+        </div>
+
+        <!-- SEARCH RECORD -->
+        <div class="page" id="page-search">
+            <h2>🔍 Search Record</h2>
+            <div class="search-bar">
+                <input type="text" id="adminSearchInput" placeholder="Enter Reference No. or Student ID...">
+                <button class="btn-primary" style="width:auto;" onclick="adminSearch()">Search</button>
+            </div>
+            <div id="adminSearchResult"></div>
+        </div>
+    </main>
+</div>
+
+<!-- UPDATE MODAL -->
+<div id="updateModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:500;">
+    <div style="background:white;border-radius:var(--radius);padding:25px;width:100%;max-width:450px;margin:20px;">
+        <h3 style="margin-bottom:15px;">Update Status</h3>
+        <p><strong>Reference:</strong> <span id="modalRef"></span></p>
+        <div class="form-group"><label>Status</label>
+            <select id="newStatus">
+                <option value="Pending">Pending</option>
+                <option value="Processing">Processing</option>
+                <option value="Ready for Pick-up/Delivery">Ready for Pick-up/Delivery</option>
+                <option value="Completed">Completed</option>
+            </select>
+        </div>
+        <div class="form-group"><label>Payment Status</label>
+            <select id="newPayment">
+                <option value="Unpaid">Unpaid</option>
+                <option value="Paid">Paid</option>
+            </select>
+        </div>
+        <div class="form-group"><label>Remarks</label><textarea id="adminRemarks" rows="2"></textarea></div>
+        <div style="display:flex;gap:10px;margin-top:20px;">
+            <button class="btn-secondary" style="flex:1;" onclick="closeModal()">Cancel</button>
+            <button class="btn-primary" style="flex:1;" onclick="saveUpdate()">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// USER DATABASE
+const users = {
+    "2026-0001": { pass: "student123", role: "student", name: "Hannah kim Apacible", email: "2026-0001@batstateu.edu.ph", course: "BS Information Technology - 3rd Year", contact: "0917-123-4567" },
+    "2026-001": { pass: "admin123", role: "admin", name: "Admin Office", email: "registrar@batstateu.edu.ph", position: "System Administrator" }
+};
+
+let currentUser = null;
+let editingRef = null;
+
+// TIME
+function updateTime() {
+    const now = new Date().toLocaleString('en-US', { 
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+    if(document.getElementById('currentTime')) document.getElementById('currentTime').textContent = now;
+    if(document.getElementById('adminTime')) document.getElementById('adminTime').textContent = now;
+}
+setInterval(updateTime, 1000);
+updateTime();
+
+// LOGIN
+function login() {
+    const id = document.getElementById('loginId').value.trim();
+    const pass = document.getElementById('loginPass').value;
+    
+    if(users[id] && users[id].pass === pass) {
+        currentUser = { id, ...users[id] };
+        document.getElementById('loginError').style.display = 'none';
+        startSession();
+    } else {
+        document.getElementById('loginError').style.display = 'block';
+    }
+}
+
+function startSession() {
+    document.getElementById('loginPage').style.display = 'none';
+    document.getElementById('appPage').style.display = 'block';
+    
+    document.getElementById('userBadge').textContent = currentUser.name.charAt(0);
+    document.getElementById('dispName').textContent = currentUser.name;
+    document.getElementById('dispRole').textContent = currentUser.role.toUpperCase();
+    if(document.getElementById('dashName')) document.getElementById('dashName').textContent = currentUser.name.split(' ')[0];
+    
+    if(currentUser.role === 'student') {
+        document.getElementById('studentMenu').classList.remove('hidden');
+        document.getElementById('adminMenu').classList.add('hidden');
+        loadStudentProfile();
+        switchPage('dashboard');
+    } else {
+        document.getElementById('studentMenu').classList.add('hidden');
+        document.getElementById('adminMenu').classList.remove('hidden');
+        switchPage('admindash');
+    }
+    renderAll();
+}
+
+function logout() {
+    currentUser = null;
+    document.getElementById('appPage').style.display = 'none';
+    document.getElementById('loginPage').style.display = 'flex';
+    document.getElementById('loginId').value = '';
+    document.getElementById('loginPass').value = '';
+    document.getElementById('loginError').style.display = 'none';
+}
+
+// NAVIGATION
+document.querySelectorAll('[data-page]').forEach(link => {
+    link.addEventListener('click', e => {
+        e.preventDefault();
+        switchPage(link.getAttribute('data-page'));
+    });
+});
+
+function switchPage(name) {
+    document.querySelectorAll('[data-page]').forEach(l => l.classList.toggle('active', l.getAttribute('data-page') === name));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(`page-${name}`).classList.add('active');
+    if(['dashboard','admindash'].includes(name)) renderStats();
+    if(name === 'history') renderStudentHistory();
+    if(name === 'manage') renderManageRequests();
+    if(name === 'allhistory') renderAllHistory();
+}
+
+function loadStudentProfile() {
+    document.getElementById('reqStudentId').textContent = currentUser.id;
+    document.getElementById('reqFullName').textContent = currentUser.name;
+    document.getElementById('reqCourseVal').textContent = currentUser.course;
+    document.getElementById('reqEmailVal').textContent = currentUser.email;
+    document.getElementById('pId').textContent = currentUser.id;
+    document.getElementById('pName').textContent = currentUser.name;
+    document.getElementById('pEmail').textContent = currentUser.email;
+    document.getElementById('pCourse').textContent = currentUser.course;
+    document.getElementById('pContact').textContent = currentUser.contact;
+}
+
+function toggleDeliveryFields() {
+    document.getElementById('deliveryFields').classList.toggle('hidden', document.getElementById('releaseMode').value !== 'Delivery');
+}
+
+// REFERENCE GENERATOR
+function generateRefNo() {
+    let ref;
+    const existing = getAllRequests().map(r => r.ref);
+    do {
+        const num = Math.floor(100000 + Math.random() * 900000);
+        ref = `REQ-${num}`;
+    } while(existing.includes(ref));
+    return ref;
+}
+
+// FORM SUBMIT
+document.getElementById('requestForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const ref = generateRefNo();
+    const mode = document.getElementById('releaseMode').value;
+    
+    const req = {
+        ref,
+        studentId: currentUser.id,
+        studentName: currentUser.name,
+        course: currentUser.course,
+        contact: currentUser.contact,
+        email: currentUser.email,
+        docType: document.getElementById('docType').value,
+        copies: parseInt(document.getElementById('copies').value),
+        purpose: document.getElementById('purpose').value,
+        releaseMode: mode,
+        delivery: mode === 'Delivery' ? {
+            contact: document.getElementById('delContact').value,
+            email: document.getElementById('delEmail').value,
+            address: document.getElementById('delAddress').value
+        } : null,
+        targetDate: document.getElementById('targetDate').value,
+        status: 'Pending',
+        paymentStatus: 'Unpaid',
+        processedBy: null,
+        dateCreated: new Date().toISOString(),
+        lastUpdated: new Date().toISOString()
+    };
+    
+    saveRequest(req);
+    // Notif para sa ADMIN — bagong request
+    addNotification({ 
+        ref, 
+        forStudent: false,
+        forAdmin: true,
+        message: `📥 New Request: ${req.docType} (${req.copies} copy/copies) — ${req.studentName}`
+    });
+    
+    document.getElementById('newRefNo').textContent = ref;
+    document.getElementById('successBlock').classList.remove('hidden');
+    e.target.reset();
+    setTimeout(() => document.getElementById('successBlock').classList.add('hidden'), 8000);
+    renderAll();
+});
+
+// STORAGE
+function getAllRequests() {
+    return JSON.parse(localStorage.getItem('batstateu_requests') || '[]');
+}
+function saveRequest(req) {
+    const all = getAllRequests();
+    all.unshift(req);
+    localStorage.setItem('batstateu_requests', JSON.stringify(all));
+}
+function updateRequest(ref, updates) {
+    const all = getAllRequests();
+    const idx = all.findIndex(r => r.ref === ref);
+    if(idx === -1) return;
+    all[idx] = { ...all[idx], ...updates, lastUpdated: new Date().toISOString() };
+    localStorage.setItem('batstateu_requests', JSON.stringify(all));
+    
+    // Notif para sa STUDENT — may update sa request niya
+    if(updates.status || updates.paymentStatus) {
+        const changes = [];
+        if(updates.status) changes.push(`Status → ${updates.status}`);
+        if(updates.paymentStatus) changes.push(`Payment → ${updates.paymentStatus}`);
+        
+        addNotification({ 
+            ref, 
+            studentId: all[idx].studentId,
+            forStudent: true,
+            forAdmin: false,
+            message: `🔔 Update for ${ref}: ${changes.join(', ')}`
+        });
+    }
+}
+
+// NOTIFICATIONS — GUMAGANA AT TAMA ANG NILALAMAN
+function getNotifications() { return JSON.parse(localStorage.getItem('batstateu_notifs') || '[]'); }
+function saveNotifications(list) { localStorage.setItem('batstateu_notifs', JSON.stringify(list)); }
+function addNotification(item) {
+    const list = getNotifications();
+    list.unshift({ 
+        ...item, 
+        time: new Date().toLocaleString(), 
+        read: false,
+        id: Date.now() + Math.random()
+    });
+    saveNotifications(list);
+    updateNotifBadge();
+}
+function updateNotifBadge() {
+    let list = getNotifications();
+    // Ipakita lang ang para sa kasalukuyang user
+    if(currentUser?.role === 'student') {
+        list = list.filter(n => n.forStudent && n.studentId === currentUser.id);
+    } else if(currentUser?.role === 'admin') {
+        list = list.filter(n => n.forAdmin);
+    }
+    const unread = list.filter(n => !n.read).length;
+    document.getElementById('notifCount').textContent = unread;
+    document.getElementById('notifCount').style.display = unread ? 'flex' : 'none';
+    renderNotifList();
+}
+function renderNotifList() {
+    let list = getNotifications();
+    // Ipakita lang ang para sa kasalukuyang user
+    if(currentUser?.role === 'student') {
+        list = list.filter(n => n.forStudent && n.studentId === currentUser.id);
+    } else if(currentUser?.role === 'admin') {
+        list = list.filter(n => n.forAdmin);
+    }
+    list = list.slice(0, 15);
+    
+    document.getElementById('notifList').innerHTML = list.length ? list.map(n => `
+        <div class="notif-item ${n.read?'':'unread'}" onclick="markRead('${n.id}')">
+            <div class="notif-text">${n.message}</div>
+            <div class="notif-time">${n.time}</div>
+        </div>`).join('') : '<p style="padding:25px;text-align:center;color:var(--gray);">No notifications yet</p>';
+}
+function markRead(id) {
+    saveNotifications(getNotifications().map(n => n.id == id ? {...n, read:true} : n));
+    updateNotifBadge();
+}
+function markAllRead() {
+    if(!currentUser) return;
+    saveNotifications(getNotifications().map(n => {
+        let visible = false;
+        if(currentUser.role === 'student' && n.forStudent && n.studentId === currentUser.id) visible = true;
+        if(currentUser.role === 'admin' && n.forAdmin) visible = true;
+        return visible ? {...n, read:true} : n;
+    }));
+    updateNotifBadge();
+    return false;
+}
+function toggleNotif() { 
+    document.getElementById('notifDropdown').classList.toggle('show'); 
+}
+// Isara kapag kinlick sa labas
+document.addEventListener('click', e => { 
+    if(!e.target.closest('#notifToggle')) {
+        document.getElementById('notifDropdown').classList.remove('show');
+    }
+});
+
+// HELPER: Format Document Name with Quantity
+function formatDocDisplay(req) {
+    return `${req.docType} (${req.copies})`;
+}
+
+// RENDER FUNCTIONS
+function renderAll() {
+    renderStats();
+    if(currentUser.role === 'student') { renderStudentHistory(); renderRecent(); }
+    else { renderManageRequests(); renderAdminDash(); renderAllHistory(); }
+    updateNotifBadge();
+}
+
+function renderStats() {
+    let reqs = getAllRequests();
+    if(currentUser.role === 'student') reqs = reqs.filter(r => r.studentId === currentUser.id);
+    
+    const pending = reqs.filter(r => r.status === 'Pending').length;
+    const processing = reqs.filter(r => r.status === 'Processing').length;
+    const completed = reqs.filter(r => r.status === 'Completed').length;
+    
+    if(currentUser.role === 'student') {
+        document.getElementById('statPending').textContent = pending;
+        document.getElementById('statProcessing').textContent = processing;
+        document.getElementById('statCompleted').textContent = completed;
+        document.getElementById('statTotal').textContent = reqs.length;
+    } else {
+        document.getElementById('aPending').textContent = pending;
+        document.getElementById('aProcessing').textContent = processing;
+        document.getElementById('aCompleted').textContent = completed;
+        document.getElementById('aTotal').textContent = reqs.length;
+    }
+}
+
+function renderRecent() {
+    const list = getAllRequests().filter(r => r.studentId === currentUser.id).slice(0,5);
+    document.getElementById('recentBody').innerHTML = list.map(r => `
+        <tr>
+            <td class="ref-no">${r.ref}</td>
+            <td>${formatDocDisplay(r)}</td>
+            <td><span class="status-tag status-${r.status.toLowerCase().replace(/\s+/g,'-').replace('/','-')}">${r.status}</span></td>
+            <td>${new Date(r.dateCreated).toLocaleDateString()}</td>
+        </tr>`).join('');
+}
+
+function renderStudentHistory() {
+    const list = getAllRequests().filter(r => r.studentId === currentUser.id);
+    document.getElementById('historyBody').innerHTML = list.map(r => `
+        <tr>
+            <td class="ref-no">${r.ref}</td>
+            <td>${formatDocDisplay(r)}</td>
+            <td><span class="status-tag status-${r.status.toLowerCase().replace(/\s+/g,'-').replace('/','-')}">${r.status}</span></td>
+            <td>${r.paymentStatus === 'Paid' ? '✅ Paid' : '⏳ Unpaid'}</td>
+            <td>${new Date(r.dateCreated).toLocaleString()}</td>
+        </tr>`).join('');
+    document.getElementById('noHistory').classList.toggle('hidden', list.length > 0);
+}
+
+function searchRequest() {
+    const ref = document.getElementById('trackRef').value.trim();
+    const req = getAllRequests().find(r => r.ref === ref && r.studentId === currentUser.id);
+    if(!req) {
+        document.getElementById('trackResult').classList.add('hidden');
+        document.getElementById('trackEmpty').classList.remove('hidden');
+        return;
+    }
+    document.getElementById('trackEmpty').classList.add('hidden');
+    document.getElementById('trackResult').classList.remove('hidden');
+    document.getElementById('tRef').textContent = req.ref;
+    document.getElementById('tDoc').textContent = formatDocDisplay(req);
+    document.getElementById('tStatus').textContent = req.status;
+    document.getElementById('tStatus').className = `status-tag status-${req.status.toLowerCase().replace(/\s+/g,'-').replace('/','-')}`;
+    document.getElementById('tPayment').textContent = req.paymentStatus;
+    document.getElementById('tUpdated').textContent = new Date(req.lastUpdated).toLocaleString();
+}
+
+// ADMIN FUNCTIONS
+function renderAdminDash() {
+    const list = getAllRequests().filter(r => r.status === 'Pending').slice(0,8);
+    document.getElementById('newReqBody').innerHTML = list.map(r => `
+        <tr>
+            <td class="ref-no">${r.ref}</td>
+            <td>${r.studentName}</td>
+            <td>${formatDocDisplay(r)}</td>
+            <td><span class="status-tag status-pending">${r.status}</span></td>
+            <td><button class="btn-sm btn-primary" style="width:auto;" onclick="openModal('${r.ref}')">Process</button></td>
+        </tr>`).join('');
+}
+
+function renderManageRequests() {
+    const search = (document.getElementById('mSearch')?.value || '').toLowerCase();
+    const filter = document.getElementById('mFilter')?.value || 'all';
+    let list = getAllRequests();
+    if(search) list = list.filter(r => r.ref.toLowerCase().includes(search) || r.studentName.toLowerCase().includes(search));
+    if(filter !== 'all') list = list.filter(r => r.status === filter);
+    
+    document.getElementById('manageBody').innerHTML = list.map(r => `
+        <tr>
+            <td class="ref-no">${r.ref}</td>
+            <td>${r.studentName}<br><small style="color:var(--gray);">${r.studentId}</small></td>
+            <td>${formatDocDisplay(r)}</td>
+            <td><span class="status-tag status-${r.status.toLowerCase().replace(/\s+/g,'-').replace('/','-')}">${r.status}</span></td>
+            <td>${r.paymentStatus === 'Paid' ? '✅' : '❌'}</td>
+            <td>${r.processedBy || '-'}</td>
+            <td><button class="btn-sm btn-primary" style="width:auto;" onclick="openModal('${r.ref}')">Update</button></td>
+        </tr>`).join('');
+}
+
+function renderAllHistory() {
+    const list = getAllRequests();
+    document.getElementById('allHistBody').innerHTML = list.map(r => `
+        <tr>
+            <td class="ref-no">${r.ref}</td>
+            <td>${r.studentName}</td>
+            <td>${formatDocDisplay(r)}</td>
+            <td><span class="status-tag status-${r.status.toLowerCase().replace(/\s+/g,'-').replace('/','-')}">${r.status}</span></td>
+            <td>${r.paymentStatus}</td>
+            <td>${r.processedBy || '-'}</td>
+            <td>${new Date(r.dateCreated).toLocaleString()}</td>
+        </tr>`).join('');
+}
+
+function openModal(ref) {
+    editingRef = ref;
+    document.getElementById('modalRef').textContent = ref;
+    const req = getAllRequests().find(r => r.ref === ref);
+    document.getElementById('newStatus').value = req.status;
+    document.getElementById('newPayment').value = req.paymentStatus;
+    document.getElementById('updateModal').classList.remove('hidden');
+}
+
+function closeModal() {
+    document.getElementById('updateModal').classList.add('hidden');
+    editingRef = null;
+}
+
+function saveUpdate() {
+    updateRequest(editingRef, {
+        status: document.getElementById('newStatus').value,
+        paymentStatus: document.getElementById('newPayment').value,
+        processedBy: currentUser.name
+    });
+    closeModal();
+    renderAll();
+}
+
+// SEARCH RECORD — GUMAGANA NA
+function adminSearch() {
+    const q = document.getElementById('adminSearchInput').value.trim().toLowerCase();
+    if(!q) {
+        document.getElementById('adminSearchResult').innerHTML = '<p style="margin-top:15px;color:var(--gray);">Enter reference number or student ID to search.</p>';
+        return;
+    }
+    const list = getAllRequests().filter(r => 
+        r.ref.toLowerCase() === q || 
+        r.studentId.toLowerCase() === q ||
+        r.ref.toLowerCase().includes(q) ||
+        r.studentId.toLowerCase().includes(q)
+    );
+    
+    document.getElementById('adminSearchResult').innerHTML = list.length ? list.map(r => `
+        <div class="card" style="margin-top:15px;">
+            <h3>📄 ${r.ref}</h3>
+            <p><strong>Student Name:</strong> ${r.studentName}</p>
+            <p><strong>Student ID:</strong> ${r.studentId}</p>
+            <p><strong>Document:</strong> ${formatDocDisplay(r)}</p>
+            <p><strong>Purpose:</strong> ${r.purpose}</p>
+            <p><strong>Status:</strong> <span class="status-tag status-${r.status.toLowerCase().replace(/\s+/g,'-').replace('/','-')}">${r.status}</span></p>
+            <p><strong>Payment Status:</strong> ${r.paymentStatus === 'Paid' ? '✅ Paid' : '⏳ Unpaid'}</p>
+            <p><strong>Mode of Release:</strong> ${r.releaseMode}</p>
+            <p><strong>Processed By:</strong> ${r.processedBy || 'Not yet processed'}</p>
+            <p><strong>Date Submitted:</strong> ${new Date(r.dateCreated).toLocaleString()}</p>
+            <p><strong>Last Updated:</strong> ${new Date(r.lastUpdated).toLocaleString()}</p>
+            <button class="btn-sm btn-primary" style="margin-top:10px;width:auto;" onclick="openModal('${r.ref}')">Update Status</button>
+        </div>`).join('') : '<p style="margin-top:15px;color:var(--gray);">No record found. Check the reference number or student ID.</p>';
+}
+</script>
+</body>
+</html>
